@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="thymeleaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>UR Railweb - Users</title>
+<th:block th:insert="fragments/mainTemplate::headerfiles"></th:block>
+</head>
+<body>
+<div class="container">
+		<div th:insert="fragments/mainTemplate::header"></div>
+		<div>
+			<h3>List of Users</h3>
+		</div> 
+		
+		<div>
+			<table class="table table-striped table-bordered table-sm table-image">
+				<thead class="thead-dark px-0">
+					<tr>
+						<th>UserID</th>
+						<th>Username</th>
+						<th>Firstname</th>
+						<th>Lastname</th>
+						<th>Roles</th>
+						<th class="col-md-auto align-content-center"><a th:href="@{/addUser}">
+							<img class="mx-auto img-responsive icon-sm" th:src="@{/images/icons/Male-user-add-icon.png}">
+						</a></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="user : ${listUsers}">
+						<td th:text="${user.id}">UserID</td>
+						<td th:text="${user.username}">Username</td>
+						<td th:text="${user.firstname}">Firstname</td>
+						<td th:text="${user.lastname}">Lastname</td>
+						<td>
+							<span th:each="role, iterStat:${user.roles}" th:text="${role.name} + ', '" th:if="${not iterStat.last}">
+							</span>
+							<span th:each="role, iterStat:${user.roles}" th:text="${role.name}" th:if="${iterStat.last}">
+							</span>
+						<td class="col-md-auto align-content-center">
+							<a th:href="/@{'users/edit/'+ ${user.id}}">
+								<img class="mx-auto img-responsive icon-sm" th:src="@{/images/icons/Male-user-edit-icon.png}">
+							</a>
+						</td>
+					</tr>	
+				</tbody>
+			</table>
+		</div>
+		<div>
+			<h3>List of Roles</h3>
+		</div> 
+		<div>
+			<table class="table table-striped table-bordered">
+				<thead class="thead-dark">
+					<tr>
+						<th>RoleID</th>
+						<th>Rolename</th>
+						<th>Parent</th>
+						<th>Privileges</th>
+						<th class="col-md-auto align-content-center">
+							<a href="#">
+								<img class="mx-auto img-responsive icon-sm" th:src="@{/images/icons/add.png}">
+							</a>
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="role : ${listRoles}">
+						<td th:text="${role.id}">RoleID</td>
+						<td th:text="${role.name}">name</td>
+						<td th:text="${role.parent}">parent</td>
+						<td>
+							<span th:each="priv,iterStat : ${role.privileges}" th:text="${priv.name} + ', '" th:if="${not iterStat.last}"></span>
+							<span th:each="priv,iterStat : ${role.privileges}" th:text="${priv.name} " th:if="${iterStat.last}"></span>
+						</td>
+						<td class="col-md-auto align-content-center">
+							<a href="#">
+								<img class="mx-auto img-responsive icon-sm" th:src="@{/images/icons/edit.png}">
+							</a>
+						</td>
+					</tr>	
+				</tbody>
+			</table>
+		</div>
+		<div>
+			<h3>List of Privileges</h3>
+		</div> 
+		
+		<div>
+			<table class="table table-striped table-bordered">
+				<thead class="thead-dark">
+					<tr>
+						<th>PrivilegeID</th>
+						<th>Name</th>
+						<th>Roles</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="privilege : ${listPrivileges}">
+						<td th:text="${privilege.id}">PrivilegeID</td>
+						<td th:text="${privilege.name}">Username</td>
+						<td>
+							<span th:each="role,iterStat:${privilege.roles}" th:text="${role.name} + ', '"th:if="${not iterStat.last}"></span>
+							<span th:each="role,iterStat:${privilege.roles}" th:text="${role.name}" th:if="${iterStat.last}"></span>
+					</tr>	
+				</tbody>
+			</table>
+		</div>
+		<div th:insert="fragments/mainTemplate::footer"></div>
+	</div>
+</body>
+</html>

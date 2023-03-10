@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="thymeleaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>UR Railweb</title>
+<th:block th:insert="fragments/mainTemplate::headerfiles"></th:block>
+</head>
+<body>
+	<div class="container">
+		<div th:insert="fragments/mainTemplate::header"></div>
+		<div class="row">
+			<div class="col-12">
+			<p><a th:href="@{/users}">List of Users</a>
+			</div>
+		</div>
+		<div th:insert="fragments/mainTemplate::footer"></div>
+	</div>
+</body>
+</html>

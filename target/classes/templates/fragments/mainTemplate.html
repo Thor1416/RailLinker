@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<head>
+<th:block th:fragment="headerfiles">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous" />
+<script src="/webjars/jquery/jquery.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+<link rel="stylesheet" th:href="@{/css/main.css}" href="/css/main.css" type="text/css">
+</th:block>
+</head>
+<body>
+	<div th:fragment="header" class="row" id="header-row">
+		<div class="col-12 text-white">
+			<h1>Railweb</h1>
+		</div>
+	</div>
+	<div th:fragment="railWebNav" class="row"></div>
+	<div th:fragment="footer" id="footer-row" class="row bg-dark">
+		<p class="text-white">(C) Railweb by Union Railroads</p>
+	</div>	
+</body>
+</html>
