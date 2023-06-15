@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.railweb.shared.domain.base.DomainObjectId;
 
-public class LineId extends DomainObjectId<UUID> {
+public class LineId extends NetSegmentId<UUID> {
 
 	/**
 	 * 
@@ -25,14 +25,15 @@ public class LineId extends DomainObjectId<UUID> {
 		this.id = UUID.randomUUID();
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		return this.id.equals(other.getId());
-	}
 
 	@Override
 	public UUID toUUID() {
 		return id;
+	}
+	@Override
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

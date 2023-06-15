@@ -1,3 +1,4 @@
+
 package com.railweb.trafficmgt.domain.train;
 
 import javax.measure.Quantity;
@@ -8,11 +9,10 @@ import com.railweb.trafficmgt.domain.network.LineGradient;
 
 public class PenaltyTable {
 
-
 	
 	public static Quantity<Time> getDecPenalty(Train train, LineGradient gradient, Quantity<Speed> speed) {
 		PenaltyTableRow row = train.getTrainType() != null ? 
-				train.getTrainType().getRowForSpeed(gradient, speed) :null;
+				train.getTrainType().getRowForSpeed(gradient, speed).:null;
 		return row != null ? row.getDeaccelration() : null;
 	}
 

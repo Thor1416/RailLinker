@@ -9,9 +9,11 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OrderColumn;
 
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.TrainRouteId;
 import com.railweb.trafficmgt.domain.network.NetEdge;
+import com.railweb.trafficmgt.domain.network.NetworkNode;
+import com.railweb.trafficmgt.domain.network.Node;
 
 import lombok.Data;
 
@@ -19,21 +21,14 @@ import lombok.Data;
 @Data
 public class TrainRoute extends AbstractEntity<TrainRouteId> {
 	
-	@EmbeddedId
 	private TrainRouteId id;
 
-	@ManyToMany
-	@JoinTable(name="TrainRoute_NetEdge",
-	joinColumns=@JoinColumn(name="routeId"),
-	inverseJoinColumns=@JoinColumn(name="netEdgeId"))
-	@OrderColumn(name="NetEdgeOrder")
-	private List<NetEdge> netEdges;
 	
 	private String name;
  
-	public TrainRoute(String name, List<NetEdge> netEdges) {
+	public TrainRoute(String name, List<NetworkNode> routeNodes) {
 		this.name = name;
-		this.netEdges=netEdges;
+	
 	}
 
 }

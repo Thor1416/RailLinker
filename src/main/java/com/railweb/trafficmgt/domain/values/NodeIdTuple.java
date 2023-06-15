@@ -1,6 +1,8 @@
 package com.railweb.trafficmgt.domain.values;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Embeddable;
+import javax.persistence.Id;
 
 import com.railweb.shared.domain.base.ValueObject;
 import com.railweb.trafficmgt.domain.network.NodeAbbr;
@@ -16,13 +18,18 @@ public class NodeIdTuple implements ValueObject<NodeIdTuple> {
 	 * 
 	 */
 	private static final long serialVersionUID = 2897855875937721715L;
-	private NodeAbbr abbr;
-	private NodePrefix prefix;
+	@Nonnull
+	@Id
+	private final NodeAbbr abbr;
+	@Nonnull
+	@Id
+	private final NodePrefix prefix;
 	@Override
 	public boolean sameValueAs(NodeIdTuple other) {
 		return abbr.sameValueAs(other.abbr) && prefix.sameValueAs(other.prefix);
 	}
-	public NodeIdTuple(NodeAbbr abbr2, NodePrefix prefix2) {
-		// TODO Auto-generated constructor stub
+	public NodeIdTuple(NodeAbbr abbr, NodePrefix prefix) {
+		this.abbr = abbr;
+		this.prefix = prefix;
 	}
 }

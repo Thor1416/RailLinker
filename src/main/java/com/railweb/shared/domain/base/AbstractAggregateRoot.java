@@ -19,6 +19,7 @@ import com.railweb.shared.domain.command.Command;
 import com.railweb.shared.domain.command.CommandFailure;
 import com.railweb.shared.domain.command.CommandHandler;
 import com.railweb.shared.domain.events.DomainEvent;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.sun.istack.NotNull;
 
 import io.vavr.control.Either;
@@ -26,7 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @MappedSuperclass
 @Slf4j
-public abstract class AbstractAggregateRoot<ID extends DomainObjectId<?>> extends AbstractEntity<ID> {
+public abstract class AbstractAggregateRoot<ID extends DomainObjectId<?>> 
+											extends AbstractDomainEntity<ID>{
 
 	/**
 	 * 

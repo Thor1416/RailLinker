@@ -1,7 +1,9 @@
 package com.railweb.trafficmgt.domain.network;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.measure.Quantity;
@@ -13,7 +15,10 @@ import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKey;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Version;
@@ -24,9 +29,15 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.railweb.shared.converters.LengthConverter;
 import com.railweb.shared.converters.SpeedConverter;
 import com.railweb.shared.domain.base.AbstractAggregateRoot;
-import com.railweb.trafficmgt.domain.TimeIntervalDirection;
+import com.railweb.shared.domain.base.AbstractDomainEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.LineId;
+import com.railweb.trafficmgt.domain.ids.TimeIntervalId;
 import com.railweb.trafficmgt.domain.ids.TrackId;
+import com.railweb.trafficmgt.domain.train.TimeInterval;
+import com.railweb.trafficmgt.domain.train.TimeIntervalDirection;
+import com.railweb.trafficmgt.exception.network.TrackNotFoundException;
+import com.railweb.trafficmgt.infra.persistence.network.LineEntity;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +65,13 @@ public class Line extends NetSegmentImpl<LineId,LineTrack>{
 	private LineGradient gradient;
 	@ManyToOne
 	private Network net;
+	
+	@OneToMany
+	@JoinTable(name = "line_timeinterval_linepath",
+				joinColumns = @JoinColumn(name="line_id", referencedColumnName="id"),
+				inverseJoinColumns = @JoinColumn(name="linepath_id",referencedColumnName="id"))
+	@MapKey(name="timeInterval_id")
+	private Map<TimeIntervalId,LinePath> timeIntervals;
 	
 	@Column(name="created_by")
 	@CreatedBy
@@ -150,6 +168,36 @@ public class Line extends NetSegmentImpl<LineId,LineTrack>{
 
 	@Override
 	protected AbstractAggregateRoot<LineId>.AggregateRootBehavior<?> initialBehavior() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addTimeInterval(TimeInterval<LineId> interval, Instant createdOn) throws TrackNotFoundException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeTimeInterval(TimeInterval<LineId> interval, Instant removedOn) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void updateTimeInterval(TimeInterval<LineId> interval, Instant updatedOn) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Line fromJpaEntity(AbstractEntity<LineId> jpaEntity) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public LineEntity toJpaEntity(AbstractDomainEntity<LineId> domainEntity) {
 		// TODO Auto-generated method stub
 		return null;
 	}

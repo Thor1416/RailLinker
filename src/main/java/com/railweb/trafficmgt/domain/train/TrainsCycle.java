@@ -12,11 +12,10 @@ import javax.persistence.OneToOne;
 import org.springframework.core.annotation.Order;
 
 import com.railweb.admin.domain.id.OperatingCompagnyId;
-import com.railweb.shared.domain.base.AbstractEntity;
 import com.railweb.shared.domain.util.Visitable;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.TimetableVisitor;
 import com.railweb.trafficmgt.domain.TrainCycleType;
-import com.railweb.trafficmgt.domain.TrainsCycleItem;
 import com.railweb.trafficmgt.domain.ids.EngineClassId;
 import com.railweb.trafficmgt.domain.ids.TimetableId;
 import com.railweb.trafficmgt.domain.ids.TrainCycleId;

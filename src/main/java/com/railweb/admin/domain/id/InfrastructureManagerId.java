@@ -26,16 +26,18 @@ public class InfrastructureManagerId extends DomainObjectId<Long>{
 		
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<Long> other) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public UUID toUUID() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+
+	@Override
+	public boolean sameValueAs(DomainObjectId<Long> other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

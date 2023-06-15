@@ -31,4 +31,10 @@ public class TimeAfterChangedEvent implements DomainEvent {
 		return occuredOn;
 	}
 
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

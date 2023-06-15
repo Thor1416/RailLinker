@@ -1,6 +1,5 @@
 package com.railweb.shared.domain.base;
 
-import java.beans.Transient;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -17,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 
 @MappedSuperclass
-public abstract class DomainObjectId<R> implements ValueObject<R> {
+public abstract class DomainObjectId<R> implements ValueObject<DomainObjectId<R>> {
 
 	/**
 	 * 
@@ -52,7 +51,7 @@ public abstract class DomainObjectId<R> implements ValueObject<R> {
 	}
 
 	@Override
-	public abstract boolean sameValueAs(R other);
+	public abstract boolean sameValueAs(DomainObjectId<R> other);
 	
 	public abstract UUID toUUID();
 	
@@ -63,7 +62,7 @@ public abstract class DomainObjectId<R> implements ValueObject<R> {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		@SuppressWarnings("unchecked")
-		R that = (R) o;
+		DomainObjectId<R> that = (DomainObjectId<R>) o; 
 		return sameValueAs(that);
 	}
 

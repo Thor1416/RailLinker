@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 
 
 @Service

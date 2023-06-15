@@ -11,7 +11,7 @@
 	@TypeDef(defaultForType=PowerSystemId.class, typeClass=PowerSystemIdType.class),
 	@TypeDef(defaultForType=RundayId.class, typeClass=RundayIdType.class),
 	@TypeDef(defaultForType=SwitchId.class, typeClass=SwitchIdType.class),
-	@TypeDef(defaultForType=TimeIntervalId.class, typeClass=TimeIntervalIdType.class),
+
 	@TypeDef(defaultForType=TimeIntervalListId.class, typeClass=TimeIntervalListIdType.class),
 	@TypeDef(defaultForType=TimetableId.class, typeClass=TimetableIdType.class),
 	@TypeDef(defaultForType=TrackConnectorId.class, typeClass=TrackConnectorIdType.class),
@@ -24,7 +24,7 @@
 	@TypeDef(defaultForType=TrainRouteId.class, typeClass=TrainRouteIdType.class),
 	})
 /**
- * @author Thorbjørn Simonsen
+ * @author Thorbjoern Simonsen
  * 
  */
 package com.railweb.trafficmgt.domain.ids;

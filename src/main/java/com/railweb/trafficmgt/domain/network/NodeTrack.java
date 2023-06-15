@@ -2,13 +2,14 @@ package com.railweb.trafficmgt.domain.network;
 
 import java.util.Set;
 
+import com.railweb.trafficmgt.domain.ids.NodeId;
 import com.railweb.trafficmgt.domain.ids.TrackId;
 import com.railweb.trafficmgt.domain.train.Platform;
 
-public class NodeTrack extends Track {
+public class NodeTrack extends Track<NodeId> {
 
-	public NodeTrack(Node owner, String tracknumber) {
-		super(owner, tracknumber);
+	public NodeTrack(NodeId ownerId, String tracknumber) {
+		super(ownerId, tracknumber);
 	}
 
 
@@ -16,10 +17,6 @@ public class NodeTrack extends Track {
 
 	public boolean isPlatform() {
 		return platforms.isEmpty();
-	}
-
-	public Node getOwnerAsNode() {
-		return (Node) owner;
 	}
 
 	@Override

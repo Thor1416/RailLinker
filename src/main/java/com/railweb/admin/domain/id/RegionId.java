@@ -27,16 +27,17 @@ public class RegionId extends DomainObjectId<UUID> {
 		
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public UUID toUUID() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

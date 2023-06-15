@@ -26,14 +26,14 @@ public class PlatformId extends DomainObjectId<UUID> {
 		this.id = UUID.randomUUID();
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		return this.id.equals(other.getId());
-	}
 
 	@Override
 	public UUID toUUID() {
 		return this.id;
+	}
+	@Override
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		return this.getId().equals(other.getId());
 	}
 
 }

@@ -25,13 +25,13 @@ public class EngineClassId extends DomainObjectId<UUID>{
 	}
 
 	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		return this.getId().equals(other.getId());
-	}
-
-	@Override
 	public UUID toUUID() {
 		return id;
+	}
+	@Override
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 

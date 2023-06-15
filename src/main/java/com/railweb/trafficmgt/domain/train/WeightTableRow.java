@@ -15,7 +15,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyJoinColumn;
 
 import com.railweb.shared.converters.SpeedConverter;
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.Timetable;
 import com.railweb.trafficmgt.domain.ids.WeightTableRowId;
 

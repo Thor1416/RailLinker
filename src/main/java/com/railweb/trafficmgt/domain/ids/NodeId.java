@@ -21,7 +21,7 @@ import lombok.Getter;
 import lombok.Setter; 
 
 
-public class NodeId extends DomainObjectId<NodeIdTuple>{
+public class NodeId extends NetSegmentId<NodeIdTuple>{
 	@Transient
 	@Getter  @Setter
 	private NodeAbbr abbr;
@@ -58,8 +58,9 @@ public class NodeId extends DomainObjectId<NodeIdTuple>{
 
 	@Override
 	public boolean sameValueAs(DomainObjectId<NodeIdTuple> other) {
-		return this.id.getAbbr().sameValueAs(other.getId().getAbbr()) && 
-				this.id.getPrefix().sameValueAs(other.getId().getPrefix());
+		return this.getId().sameValueAs(other.getId());
 	}
+
+	
 
 }

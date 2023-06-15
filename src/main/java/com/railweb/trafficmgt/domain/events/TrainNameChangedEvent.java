@@ -36,4 +36,11 @@ public class TrainNameChangedEvent extends TrainEvent {
 		return null;
 	}
 
+
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

@@ -64,7 +64,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Either;
 
 /**
- * @author Thorbjørn Simonsen
+ * @author Thorbjoern Simonsen
  * @since 09-12-2021
  */
 

@@ -4,7 +4,7 @@
 	@TypeDef(defaultForType=OperatingCompagnyId.class, typeClass=OperatingCompagnyIdType.class),
 	})
 /**
- * @author Thorbjørn Simonsen
+ * @author Thorbjoern Simonsen
  * 
  */
 package com.railweb.admin.domain.id;

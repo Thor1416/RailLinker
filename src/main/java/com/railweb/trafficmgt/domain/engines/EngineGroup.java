@@ -5,7 +5,7 @@ import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.EngineGroupId;
 
 import lombok.Data;
@@ -20,7 +20,7 @@ public class EngineGroup extends AbstractEntity<EngineGroupId> {
 	 */
 	private static final long serialVersionUID = -4020490249442057370L;
 	@ManyToMany(mappedBy="engineRuns")
-	private Set<EngineRun> enginesRun;
+	private Set<EngineCycle> enginesRun;
 
 	private String name;
 

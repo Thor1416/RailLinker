@@ -5,7 +5,9 @@ import javax.measure.format.QuantityFormat;
 import javax.measure.quantity.Time;
 import javax.measure.spi.ServiceProvider;
 import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
+@Converter(autoApply=true)
 public class TimeConverter implements AttributeConverter<Quantity<Time>, String> {
 	private static final QuantityFormat FORMAT = ServiceProvider.current().getFormatService().getQuantityFormat();
 

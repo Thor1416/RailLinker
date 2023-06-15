@@ -3,31 +3,22 @@ package com.railweb.trafficmgt.domain.network;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.PostLoad;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-
-import org.hibernate.envers.Audited;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
-import org.jgrapht.event.GraphEdgeChangeEvent;
-import org.jgrapht.event.GraphListener;
-import org.jgrapht.event.GraphVertexChangeEvent;
 import org.jgrapht.graph.AsUnmodifiableGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultListenableGraph;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
 import org.springframework.context.ApplicationContext;
@@ -36,12 +27,13 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import com.railweb.admin.domain.InfrastructureManager;
 import com.railweb.admin.domain.Region;
+import com.railweb.admin.domain.id.InfrastructureManagerId;
 import com.railweb.shared.domain.base.AbstractAggregateRoot;
-import com.railweb.shared.domain.items.ItemWithIdSet;
+import com.railweb.shared.domain.base.AbstractDomainEntity;
 import com.railweb.shared.domain.util.Tuple;
 import com.railweb.shared.domain.util.Visitable;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.application.command.CopyNetworkCommandExecutor;
 import com.railweb.trafficmgt.application.command.CreateNetworkCommandExecutor;
 import com.railweb.trafficmgt.domain.TimetableVisitor;
@@ -57,7 +49,7 @@ import com.railweb.trafficmgt.domain.ids.NetworkId;
 import com.railweb.trafficmgt.domain.ids.NodeId;
 import com.railweb.trafficmgt.domain.ids.TimetableId;
 import com.railweb.trafficmgt.domain.train.TrainRoute;
-import com.railweb.trafficmgt.exception.NodeNotFoundException;
+import com.railweb.trafficmgt.infra.persistence.network.NetworkEntity;
 import com.railweb.usermgt.model.User;
 import com.sun.istack.NotNull;
 
@@ -67,34 +59,25 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Representation of a rail network
  * 
- * @author Thorbjørn Simonsen
+ * @author Thorbjï¿½rn Simonsen
  * @version 1.0
  */
 
-@Entity
-@Table(name = "RailNetwork")
 @Data
 @Slf4j
-@Audited
 public class Network extends AbstractAggregateRoot<NetworkId> implements Visitable<TimetableVisitor> {
 
 	@NotNull
 	private String name;
-	@Column(unique = true)
 	private String code;
-	@ManyToOne
-	private InfrastructureManager owner;
+	private InfrastructureManagerId owner;
 	@CreatedBy
 	private User creator;
 	@CreatedDate
-	@Column(columnDefinition = "TIMESTAMP")
 	private OffsetDateTime created;
-	@Column(columnDefinition = "TIMESTAMP")
 	private OffsetDateTime validFrom;
-	@Column(columnDefinition = "TIMESTAMP")
 	private OffsetDateTime validTo;
 	@LastModifiedDate
-	@Column(columnDefinition = "TIMESTAMP")
 	private OffsetDateTime lastedit;
 	@LastModifiedBy
 	private User lastEditedBy;
@@ -102,42 +85,32 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 	private NodePrefix prefix;
 
 	// ForeignKeys to Timetable
-	@OneToMany
 	private Set<TimetableId> timetables;
-	@OneToMany(fetch = FetchType.LAZY)
-	private ItemWithIdSet<LineClass,LineClasssId> lineclasses;
-	@OneToMany(fetch = FetchType.LAZY)
-	private ItemWithIdSet<Region, RegionId> regions;
-	@OneToMany(fetch = FetchType.LAZY)
-	private ItemWithIdSet<TrainRoute> trainroutes;
-	@OneToMany(fetch = FetchType.LAZY)
+	private Set<LineClass> lineclasses;
+	private Set<Region> regions;
+	private Set<TrainRoute> trainroutes;
 	private Set<TrackSystem> trackSystems;
 
-	// Database representation of the graph
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private Set<NetEdge> netEdges;
-	@OneToMany(mappedBy = "network", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private Set<NetworkNode> netNodes;
-
-	@Transient
 	private DefaultListenableGraph<NetworkNode, LinePath> netDelegate;
+	private List<NetworkValidator> networkValidators;
 
 	public Network(ApplicationContext context) {
 		super(context, new NetworkId(UUID.randomUUID()));
-		Graph<NetworkNode, LinePath> innerGraph = GraphTypeBuilder.directed().allowingMultipleEdges(true).allowingSelfLoops(false)
-				.edgeClass(LinePath.class).vertexClass(NetworkNode.class).buildGraph();
+		Graph<NetworkNode, LinePath> innerGraph = GraphTypeBuilder.directed()
+				.allowingMultipleEdges(true).allowingSelfLoops(false)
+				.edgeClass(LinePath.class).vertexClass(NetworkNode.class)
+				.buildGraph();
 		DefaultListenableGraph<NetworkNode, LinePath> netDelegate = new DefaultListenableGraph<NetworkNode, LinePath>(innerGraph);
-		netDelegate.addGraphListener(new NetworkListener());
 		this.netDelegate = netDelegate;
+		// addvalidators
 	}
 
 	public Network(ApplicationContext context, String name) {
-		super(context,new NetworkId(UUID.randomUUID()));
+		super(context, new NetworkId(UUID.randomUUID()));
 		this.name = name;
-		Graph<NetworkNode, LinePath> innerGraph = GraphTypeBuilder.directed().allowingMultipleEdges(true).allowingSelfLoops(false)
-				.edgeClass(LinePath.class).vertexClass(NetworkNode.class).buildGraph();
+		Graph<NetworkNode, LinePath> innerGraph = GraphTypeBuilder.directed().allowingMultipleEdges(true).allowingSelfLoops(false).edgeClass(LinePath.class).vertexClass(NetworkNode.class)
+				.buildGraph();
 		DefaultListenableGraph<NetworkNode, LinePath> netDelegate = new DefaultListenableGraph<>(innerGraph);
-		netDelegate.addGraphListener(new NetworkListener());
 		this.netDelegate = netDelegate;
 	}
 
@@ -159,27 +132,13 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 		this.trackSystems = network.trackSystems;
 		this.netDelegate = network.netDelegate;
 	}
+
 	@Override
 	protected AbstractAggregateRoot<NetworkId>.AggregateRootBehavior<?> initialBehavior() {
 		AggregateRootBehaviorBuilder<NetworkId> behaviorBuilder = new AggregateRootBehaviorBuilder<>();
 		behaviorBuilder.setCommandHandlers(CreateNetwork.class, getHandler(CreateNetworkCommandExecutor.class));
 		behaviorBuilder.setCommandHandlers(CopyNetwork.class, getHandler(CopyNetworkCommandExecutor.class));
 		return behaviorBuilder.build();
-	}
-
-	@PostLoad
-	private void loadGraph() throws NodeNotFoundException {
-		for (NetworkNode node : netNodes) {
-			netDelegate.addVertex(node);
-		}
-		for (NetEdge edge : netEdges) {
-			NetworkNode fromNode = netNodes.stream().filter(n -> edge.getFromNode().equals(n.getNode())).findFirst()
-					.orElseThrow(NodeNotFoundException::new);
-			NetworkNode toNode = netNodes.stream().filter(n -> edge.getToNode().equals(n.getNode())).findFirst()
-					.orElseThrow(NodeNotFoundException::new);
-			netDelegate.addEdge(fromNode, toNode, edge.getLinePath());
-		}
-
 	}
 
 	public Tuple<Node> getNodes(LinePath linepath) {
@@ -254,7 +213,7 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 		NetworkNode fromNode = netDelegate.vertexSet().stream().filter(n -> n.getNode().getId().equals(from.getId())).findAny().get();
 
 		Set<LinePath> linePaths = new HashSet<>();
-		
+
 		if (line.isBiDirectional()) {
 			LinePath linePath1 = new LinePath(line, from, to);
 			LinePath linePath2 = new LinePath(line, to, from);
@@ -267,11 +226,9 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 			netDelegate.addEdge(fromNode, toNode, linePath1);
 			linePaths.add(linePath1);
 		}
-		
-		Set<LinePathId> linePathIds = linePaths.stream()
-											.map(lp -> lp.getId())
-											.collect(Collectors.toSet());
-		
+
+		Set<LinePathId> linePathIds = linePaths.stream().map(lp -> lp.getId()).collect(Collectors.toSet());
+
 		registerEvent(new LineAdded(line.getId(), Instant.now(), linePathIds));
 	}
 
@@ -279,7 +236,7 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 		line.getTracks().clear();
 		netDelegate.removeAllEdges(line.getLinePaths());
 		line.getLinePaths().clear();
-		registerEvent(new LineRemovedEvent( line.getId(),Instant.now(),this.id));
+		registerEvent(new LineRemovedEvent(line.getId(), Instant.now(), this.id));
 	}
 
 	public List<LinePath> getRoute(Node from, Node to) {
@@ -317,28 +274,75 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 	}
 
 	public TrainRoute createTrainRoute(String name, List<NetworkNode> nodes) {
-		DijkstraShortestPath<NetworkNode, LinePath> alg = new DijkstraShortestPath<>(netDelegate);
-		List<NetEdge> netEdgesInRoute = new ArrayList<>();
+		List<NetworkNode> routeNodes = new ArrayList<>();
 
+		// Find all nodes in route
 		for (int i = 0; i < nodes.size() - 1; i++) {
-			GraphPath<NetworkNode, LinePath> path = alg.getPath(nodes.get(i), nodes.get(i + 1));
-			if (path != null) {
-				for (LinePath lp : path.getEdgeList()) {
-					Optional<NetEdge> netEdge = netEdges.stream().filter(ne -> ne.getLinePath().equals(lp)).findAny();
-					if (netEdge.isPresent()) {
-						netEdgesInRoute.add(netEdge.get());
-					}
-				}
-			}
+			NetworkNode source = nodes.get(i);
+			NetworkNode target = nodes.get(i + 1);
 
-		}
-		if (netEdgesInRoute.isEmpty()) {
-			return null;
+			// Use a graph traversal algorithm to find the route between source
+			// and target and collect all the nodes on the route
+			List<NetworkNode> intermediateNodes = traverseGraph(source, target);
+			routeNodes.addAll(intermediateNodes);
 		}
 
-		TrainRoute route = new TrainRoute(name, netEdgesInRoute);
+		// Add the last node in the provided list (the destination node)
+		routeNodes.add(nodes.get(nodes.size() - 1));
+
+		TrainRoute route = new TrainRoute(name, routeNodes);
 		this.trainroutes.add(route);
 		return route;
+	}
+
+	private List<NetworkNode> traverseGraph(NetworkNode source, NetworkNode target) {
+
+		List<NetworkNode> intermediateNodes = new ArrayList<>();
+
+		// Perform a breadth-first search to find the route between source and target
+		// nodes
+		Queue<NetworkNode> queue = new LinkedList<>();
+		Map<NetworkNode, NetworkNode> parentMap = new HashMap<>();
+		queue.add(source);
+
+		while (!queue.isEmpty()) {
+
+			NetworkNode current = queue.poll();
+
+			if (current.equals(target)) {
+				// Found the target node, construct the route by traversing the parent map
+				NetworkNode node = current;
+				while (node != null) {
+					intermediateNodes.add(node);
+					node = parentMap.get(node);
+				}
+				Collections.reverse(intermediateNodes);
+				break;
+			}
+
+			// Visit Neighboring nodes
+			for (NetworkNode neighbor : getNeighbors(current)) {
+				if (!parentMap.containsKey(neighbor)) {
+					parentMap.put(neighbor, current);
+					queue.add(neighbor);
+				}
+			}
+		}
+
+		return intermediateNodes;
+	}
+
+	private List<NetworkNode> getNeighbors(NetworkNode node) {
+		List<NetworkNode> neighbors = new ArrayList<>();
+
+		// Iterate over the outgoing edges from the given node and collect the target
+		// nodes
+		for (LinePath edge : netDelegate.outgoingEdgesOf(node)) {
+			NetworkNode neighbor = netDelegate.getEdgeTarget(edge);
+			neighbors.add(neighbor);
+		}
+
+		return neighbors;
 	}
 
 	public String toString() {
@@ -351,40 +355,16 @@ public class Network extends AbstractAggregateRoot<NetworkId> implements Visitab
 
 	}
 
-	class NetworkListener implements GraphListener<NetworkNode, LinePath> {
-
-		@Override
-		public void vertexAdded(GraphVertexChangeEvent<NetworkNode> e) {
-			if (!netNodes.contains(e.getVertex()))
-				netNodes.add(e.getVertex());
-		}
-
-		@Override
-		public void vertexRemoved(GraphVertexChangeEvent<NetworkNode> e) {
-			if (netNodes.contains(e.getVertex()))
-				netNodes.remove(e.getVertex());
-
-		}
-
-		@Override
-		public void edgeAdded(GraphEdgeChangeEvent<NetworkNode, LinePath> e) {
-
-			NetEdge edge = new NetEdge(Network.this, e.getEdgeSource().getNode(), e.getEdgeTarget().getNode(), e.getEdge());
-			if (!netEdges.contains(edge)) {
-				netEdges.add(edge);
-			}
-
-		}
-
-		@Override
-		public void edgeRemoved(GraphEdgeChangeEvent<NetworkNode, LinePath> e) {
-			netEdges.removeIf(ne -> ne.getLinePath().equals(e.getEdge()));
-
-		}
-
+	@Override
+	public Network fromJpaEntity(AbstractEntity<NetworkId> jpaEntity) {
+		if()
+		return null;
 	}
 
-	
-
+	@Override
+	public NetworkEntity toJpaEntity(AbstractDomainEntity<NetworkId> domainEntity) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

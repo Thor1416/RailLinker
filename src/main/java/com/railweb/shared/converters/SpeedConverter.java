@@ -5,7 +5,9 @@ import javax.measure.format.QuantityFormat;
 import javax.measure.quantity.Speed;
 import javax.measure.spi.ServiceProvider;
 import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
+@Converter(autoApply=true)
 public class SpeedConverter implements AttributeConverter<Quantity<Speed>, String> {
 	
 	private static final QuantityFormat FORMAT = ServiceProvider.current().getFormatService().getQuantityFormat();

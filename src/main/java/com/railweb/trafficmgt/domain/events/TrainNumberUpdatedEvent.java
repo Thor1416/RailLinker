@@ -29,5 +29,12 @@ public class TrainNumberUpdatedEvent implements DomainEvent {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
 }

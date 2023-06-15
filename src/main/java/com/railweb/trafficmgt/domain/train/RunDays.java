@@ -7,8 +7,8 @@ import javax.persistence.ElementCollection;
 import javax.persistence.EmbeddedId;
 import javax.persistence.JoinColumn;
 
-import com.railweb.shared.domain.base.AbstractEntity;
 import com.railweb.shared.domain.util.Day;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.RundayId;
 
 public class RunDays extends AbstractEntity<RundayId> {

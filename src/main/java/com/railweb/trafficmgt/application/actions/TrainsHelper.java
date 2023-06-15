@@ -40,18 +40,18 @@ public class TrainsHelper {
 				 .collect(Collectors.toCollection(()->new TreeSet<Quantity<Speed>>()));
 		 
 		 Quantity<Speed> result = null;
-		 for(Quantity<Speed> speed: speeds) {
-			 ComparableQuantity<Mass> totalWeight = trainTypes.stream()
-					 .map(tt->tt.getWeightTableRowForSpeed(speed))
-					 .reduce(Quantities.getQuantity(0, Units.KILOGRAM), (w,rfs)->{
-						ComparableQuantity<Mass> ew = rfs != null ? rfs.getWeight(gradient):null;
-						return ew == null ? w : w.add(ew);
-					 },ComparableQuantity::add);
-			 
-			 if(totalWeight.isGreaterThanOrEqualTo(weight)) {
-				 break;
-			 }
-		 }
+//		 for(Quantity<Speed> speed: speeds) {
+//			 ComparableQuantity<Mass> totalWeight = trainTypes.stream()
+//					 .map(tt->tt.getWeightTableRowForSpeed(speed))
+//					 .reduce(Quantities.getQuantity(0, Units.KILOGRAM), (w,rfs)->{
+//						ComparableQuantity<Mass> ew = rfs != null ? rfs.getWeight(gradient):null;
+//						return ew == null ? w : w.add(ew);
+//					 },ComparableQuantity::add);
+//			 
+//			 if(totalWeight.isGreaterThanOrEqualTo(weight)) {
+//				 break;
+//			 }
+//		 }
 		 return result;
 	 }
 	 

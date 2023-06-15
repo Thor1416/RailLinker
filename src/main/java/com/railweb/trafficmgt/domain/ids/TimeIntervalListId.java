@@ -24,6 +24,10 @@ public class TimeIntervalListId extends DomainObjectId<UUID> {
 		super(UUID.fromString(uuid));
 	}
 	
+	public TimeIntervalListId() {
+		super(UUID.randomUUID());
+	}
+
 	@Override
 	protected void assignId() {
 		// TODO Auto-generated method stub

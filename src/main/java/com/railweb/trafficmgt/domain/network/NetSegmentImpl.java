@@ -1,16 +1,17 @@
 package com.railweb.trafficmgt.domain.network;
 
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import com.google.common.collect.Iterators;
 import com.railweb.shared.domain.base.AbstractAggregateRoot;
-import com.railweb.shared.domain.base.DomainObjectId;
-import com.railweb.shared.domain.items.ItemList;
-import com.railweb.trafficmgt.domain.events.TimeIntervalEvent;
+import com.railweb.trafficmgt.domain.ids.NetSegmentId;
 import com.railweb.trafficmgt.domain.train.TimeInterval;
 
-abstract class NetSegmentImpl<ID extends DomainObjectId<?>, T extends Track>
+
+abstract class NetSegmentImpl<ID extends NetSegmentId<?>, T extends Track<ID>>
 						extends AbstractAggregateRoot<ID> 
 						implements NetSegment<ID,T> {
 
@@ -23,42 +24,70 @@ abstract class NetSegmentImpl<ID extends DomainObjectId<?>, T extends Track>
 		super(source);
 	}
 
-	protected ItemList<T> tracks;
+	protected List<T> tracks;
 
-	public Iterator<TimeInterval> iterator() {
-		return Iterators.concat(Iterators.transform(tracks.iterator(), Track::iterator));
+	public Iterator<TimeInterval<ID>> iterator() {
+		List<Iterator<TimeInterval<? extends NetSegmentId<?>>>> iterators = new ArrayList<>();
+		
+		for(T track: tracks) {
+			iterators.add(track.iterator());
+		}
+		
+		return new TimeIntervalIterator<>(iterators.iterator());
+		
 	}
+	
+	private static class TimeIntervalIterator<ID extends NetSegmentId<?>, 
+							N extends TimeInterval<? extends NetSegmentId<?>>> 
+						implements Iterator<TimeInterval<ID>>{
+		
+		private final Iterator<Iterator<TimeInterval<? extends NetSegmentId<?>>>> iteratorOfIterators;
+		private Iterator<TimeInterval<? extends NetSegmentId<?>>> currentIterator;
+		private TimeInterval<ID> nextElement;
 
-	@Override
-	public void addTimeInterval(TimeInterval interval, Instant createdOn) {
-		interval.getTrack().addTimeInterval(interval);
-		registerEvent(new TimeIntervalEvent<ID,T>(this,interval,TimeIntervalEvent.Type.ADDED, createdOn));
+		public TimeIntervalIterator(Iterator<Iterator<TimeInterval<? extends NetSegmentId<?>>>> iteratorOfIterators) {
+			this.iteratorOfIterators = iteratorOfIterators;
+			currentIterator= getNextIterator();
+		}
+		
+		private Iterator<TimeInterval<? extends NetSegmentId<?>>> getNextIterator(){
+			
+			while(iteratorOfIterators.hasNext()) {
 				
-	}
-
-	@Override
-	public void removeTimeInterval(TimeInterval interval, Instant removedOn) {
-		interval.getTrack().removeTimeInterval(interval);
-		registerEvent(new TimeIntervalEvent<ID,T>(this,interval, TimeIntervalEvent.Type.REMOVED, removedOn));
-	}
-
-	@Override
-	public void updateTimeInterval(TimeInterval interval, Instant updatedOn) {
-		T track = this.getTrackForInterval(interval);
-		if (track == null) {
-			throw new IllegalStateException("Segment doesn't contain interval.");
+				Iterator<TimeInterval<? extends NetSegmentId<?>>> iterator =
+													iteratorOfIterators.next();
+				if(iterator.hasNext()) {
+					return iterator;
+				}
+			}
+			return null;
 		}
-		track.removeTimeInterval(interval);
-		interval.getTrack().addTimeInterval(interval);
-		registerEvent(new TimeIntervalEvent<ID,T>(this,interval, TimeIntervalEvent.Type.CHANGED, updatedOn));
-
-	}
-
-	private T getTrackForInterval(TimeInterval interval) {
-		for (T track : tracks) {
-			if (track.getIntervalList().contains(interval))
-				return track;
+		
+		@Override
+		public boolean hasNext() {
+			if(nextElement != null) {
+				return true;
+			}
+			while (currentIterator != null && !currentIterator.hasNext()) {
+				currentIterator = getNextIterator();
+			}
+			if(currentIterator !=null) {
+				nextElement = (TimeInterval<ID>) currentIterator.next();
+				return true;
+			}
+			
+			return false;
 		}
-		return null;
+
+		@Override
+		public TimeInterval<ID> next() {
+			if(!hasNext()) {
+				throw new NoSuchElementException();
+			}
+			
+			TimeInterval<ID> result = nextElement;
+			nextElement = null;
+			return result;
+		}
 	}
 }

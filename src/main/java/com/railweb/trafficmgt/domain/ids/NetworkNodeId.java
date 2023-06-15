@@ -30,11 +30,6 @@ public class NetworkNodeId extends DomainObjectId<NetworkNodeIdTuple>{
 		
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<NetworkNodeIdTuple> other) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public UUID toUUID() {
@@ -43,14 +38,20 @@ public class NetworkNodeId extends DomainObjectId<NetworkNodeIdTuple>{
 	}
 
 	public NodeAbbr abbr() {
-		return id.getNodeId().getAbbr();
+		return id.getAbbr();
 	}
 
 	public NodePrefix prefix() {
-		return id.getNodeId().getPrefix();
+		return id.getPrefix();
 	}
 	
 	public NetworkId network() {
 		return id.getNetworkId();
+	}
+
+
+	@Override
+	public boolean sameValueAs(DomainObjectId<NetworkNodeIdTuple> other) {
+		return this.getId().sameValueAs(other.getId());
 	}
 }

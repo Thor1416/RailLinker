@@ -11,11 +11,9 @@ import java.util.Set;
 import javax.measure.Quantity;
 import javax.measure.quantity.Speed;
 import javax.persistence.Basic;
-import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -24,66 +22,45 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 
-import org.hibernate.annotations.Any;
-import org.hibernate.annotations.AnyMetaDef;
-import org.hibernate.annotations.MetaValue;
-
 import com.railweb.shared.converters.SpeedConverter;
-import com.railweb.shared.domain.base.AbstractEntity;
-import com.railweb.shared.domain.base.DomainObjectId;
-import com.railweb.trafficmgt.domain.ManagedFreightOption;
-import com.railweb.trafficmgt.domain.TimeIntervalDirection;
-import com.railweb.trafficmgt.domain.TimeIntervalList;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.TrackConnector;
+import com.railweb.trafficmgt.domain.ids.LineId;
+import com.railweb.trafficmgt.domain.ids.NetSegmentId;
+import com.railweb.trafficmgt.domain.ids.NodeId;
 import com.railweb.trafficmgt.domain.ids.TimeIntervalId;
+import com.railweb.trafficmgt.domain.ids.TrackId;
 import com.railweb.trafficmgt.domain.network.Line;
-import com.railweb.trafficmgt.domain.network.LineTrack;
-import com.railweb.trafficmgt.domain.network.NetSegment;
-import com.railweb.trafficmgt.domain.network.Node;
 import com.railweb.trafficmgt.domain.network.NodeTrack;
-import com.railweb.trafficmgt.domain.network.Station;
 import com.railweb.trafficmgt.domain.network.Track;
 import com.railweb.trafficmgt.domain.train.Train.NameType;
 import com.railweb.trafficontrol.model.Block;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
-@AllArgsConstructor(access=AccessLevel.PRIVATE)
 @Entity
-public class TimeInterval extends AbstractEntity<TimeIntervalId> {
+@MappedSuperclass
+public abstract class TimeInterval<T extends NetSegmentId<?>> extends AbstractEntity<TimeIntervalId> {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -4924257378896632472L;
-	@EmbeddedId
-	private TimeIntervalId id; 
 	@Embedded
 	private Interval interval;
 	@ManyToOne
 	private Train train;
+	@ManyToOne
+	@JoinColumn(name="ownerId")
+	private T ownerId;
 	
-	@Any(metaColumn=@Column(name="ownerType"))
-	@AnyMetaDef(idType="long", metaType="string",
-				metaValues= {
-						@MetaValue(targetEntity=Node.class, value="N"),
-						@MetaValue(targetEntity=Line.class, value="L"),
-						@MetaValue(targetEntity=Block.class, value="B"),
-						@MetaValue(targetEntity=Station.class, value="S")
-				})
-	@JoinColumn(name = "trackID")
-	private NetSegment<? extends DomainObjectId<?>,? extends Track> owner;
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	private Track track;
+	private TrackId trackId;
 	
 	@Convert(converter = SpeedConverter.class)
 	private Quantity<Speed> speedLimit;
@@ -91,11 +68,11 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 	private Duration addedTime;
 	
 	@JoinTable(name = "overlaps",
-			joinColumns = @JoinColumn(name="interval1", referencedColumnName="timeIntervalID"),
+			joinColumns = @JoinColumn(name="interval1", referencedColumnName="timeIntervalId"),
 			inverseJoinColumns = @JoinColumn(name="interval2",referencedColumnName="timeIntervalId")
 	)
 	@ManyToMany
-	private Set<TimeInterval> overlappingIntervals;
+	private Set<TimeInterval<T>> overlappingIntervals;
 	
 	@Enumerated(EnumType.ORDINAL)
 	private TimeIntervalDirection direction;
@@ -108,13 +85,25 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 	@Basic(fetch=FetchType.LAZY)
 	@ElementCollection
 	private Set<String> comments;
+
+	
+	private NodeId fromNode;
+	
+	private NodeId toNode;
 	
 	private Boolean ignoreLength;
 	private Boolean showComments;
 	
-	private Boolean shunt;
-	@Enumerated
-	private ManagedFreightOption freightOption;
+	@ManyToOne
+	private TimeInterval<?> previousInterval;
+	@ManyToOne
+	private TimeInterval<?> nextInterval;
+
+	@ManyToOne
+	private TrackConnector toTrackConnector;
+	@ManyToOne
+	private TrackConnector fromTrackConnector;
+	
 	
 	@Transient
 	private TimeIntervalCalculation calculation;
@@ -123,7 +112,7 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
      * creates instance of an time interval.
      *
      * @param train train
-     * @param owner owner (node track, node, ...)
+     * @param ownerId id for the owner owner (node track, node, ...)
      * @param start start time
      * @param end end time
      * @param speed speed for line time interval
@@ -131,22 +120,23 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
      * @param track track
      * @param addedTime added time
      */
-	public TimeInterval(Train train, NetSegment<? extends DomainObjectId<?>, ? extends Track> owner,
-			OffsetTime start, OffsetTime end, Quantity<Speed> speed,
-			TimeIntervalDirection direction, Track track, Duration addedTime) {
-		
+	public TimeInterval(Train train, OffsetTime start, OffsetTime end,
+			Quantity<Speed> speed, TimeIntervalDirection direction,
+			TrackId trackId, Duration addedTime) {
 		this.setTrain(train);
-		this.setOwner(owner);
 		this.interval = IntervalFactory.createInterval(start,end);
 		this.direction = direction;
-		this.track = track;
+		this.trackId = trackId;
 		this.addedTime = addedTime;
 		this.speedLimit = speed;
 	}
-	public TimeInterval(Train train, NetSegment<? extends DomainObjectId<?>,? extends Track> owner,
-			OffsetTime start, OffsetTime end, Track track) {
-		this(train,owner,start, end, null, null, track, Duration.ZERO);
+	public TimeInterval(Train train, OffsetTime start, OffsetTime end, TrackId track) {
+		this(train,start, end, null, null, track, Duration.ZERO);
 	}
+	
+	
+	//For JPA use only
+	public TimeInterval() {}
 	
 	@PostLoad
 	private void init() {
@@ -154,6 +144,7 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 			this.calculation = new TimeIntervalCalculation(train, this);
 		}
 	}
+	
 	
 	public OffsetTime getEnd() {
 		return interval.getEnd();
@@ -209,36 +200,22 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
      * @param o interval
      * @return comparison
      */
-	public int compareOpenNormalized(TimeInterval o) {
+	public int compareOpenNormalized(TimeInterval<T> o) {
 		return this.getInterval().compareOpenNormalized(o.getInterval());
 	}
 	 /**
      * compares intervals for trains. Closed/bounded interval. It uses
      * normalized intervals.
      *
-     * @param o interval
+     * @param interval2 interval
      * @return comparison
      */
-    public int compareClosedNormalized(TimeInterval o) {
-        return this.getInterval().compareClosedNormalized(o.getInterval());
+    public int compareClosedNormalized(TimeInterval<? extends NetSegmentId<?>> interval2) {
+        return this.getInterval().compareClosedNormalized(interval2.getInterval());
     }
     
     public String toString() {
-    	String ownerStr;
-    	if(getOwner() != null) {
-    		if(isNodeOwner()) {
-    			ownerStr = getOwner().toString();
-    		}
-    		else if(isLineOwner()) {
-    			ownerStr = getOwnerAsLine().toString(getDirection());
-    		}else if(isBlockOwner()) {
-    			ownerStr = getOwnerAsBlock().toString(getDirection());
-    		}else {
-    			ownerStr = "-";
-    		}
-    	}else {
-    		ownerStr="-";
-    	}
+    	String ownerStr= ownerId.toString();
     	OffsetTime start = this.getInterval().getStart();
     	OffsetTime end = this.getInterval().getEnd();
     	if(start.compareTo(end) !=0) {
@@ -251,7 +228,7 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
     }
 	
 	private String getTrackString() {
-		return getTrack() == null ? "-": getTrack().getTracknumber();
+		return getTrackId() == null ? "-": getTrackId().toString();
 	}
 	
 	public void setSpeedLimit(Quantity<Speed> speedLimit) {
@@ -280,14 +257,14 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
     /**
      * @param track the track to set
      */
-	public void setTrack(Track track) {
-		if(track != this.track) {
-			this.track = track;
+	public void setTrackId(TrackId trackId) {
+		if(trackId != this.trackId) {
+			this.trackId = trackId;
 			this.setChanged(true);
 		}
 	}
 	
-	public Set<TimeInterval> getOverlappingInterval(){
+	public Set<TimeInterval<T>> getOverlappingInterval(){
 		if(overlappingIntervals==null) {
 			overlappingIntervals = new HashSet<>();
 		}
@@ -298,16 +275,6 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 
 	public boolean isOverlapping() {
 		return (overlappingIntervals != null) && overlappingIntervals.isEmpty();
-	}
-	
-	 /**
-     * @return <code>false</code> if there is no platform for train that needs one (in any other case it returns <code>true</code>)
-     */
-	public boolean isPlatformOK() {
-		if(this.isStop()){
-			return !(train.getTrainClass().isPlatform() && !((NodeTrack)track).isPlatform());
-		}
-		return true;
 	}
 
 	 /**
@@ -357,70 +324,23 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 		}
 	}
 	
-	/**
-     * @return from node for interval that belongs to line otherwise <code>null</code>
-     */
-	public Node getFrom() {
-		return (owner instanceof Line) ? ((Line) owner).getFrom(direction): null;
-	}
-	/**
-     * @return to node for interval that belongs to line otherwise <code>null</code>
-     */
-	public Node getTo() {
-		return (owner instanceof Line) ? ((Line) owner).getFrom(direction): null;
-	}
-	
-	/**
-     * @return if the current interval is straight from previous one
-     */
-	public boolean isFromStraight() {
-		if(isNodeOwner()) {
-			return this.getFromTrackConnector()
-					.map(c->c.getStraightNodeTrack().orElse(null) == getTrack())
-					.orElse(false);
-		}else {
-			return this.getPreviousTrainInterval().isToStraight();
-		}
-	}
-	public boolean isToStraight() {
-		if(isNodeOwner()) {
-			return this.getToTrackConnector().map(c->c.getStraightNodeTrack().orElse(null)==getTrack()).orElse(false);
-		}else {}
-		return this.getNextTrainInterval().isFromStraight();
-	}
-	
 	public Optional<TrackConnector> getFromTrackConnector(){
-		TimeInterval prevInterval = this.getPreviousTrainInterval();
+		TimeInterval<?> prevInterval = this.getPreviousTrainInterval();
 		if(isNodeOwner()){
-			Node node = getOwnerAsNode();
-			return prevInterval == null ? Optional.empty() : 
-				node.getTrackConnectors().getForLineTrack((LineTrack) prevInterval.getTrack());
+			return Optional.ofNullable(fromTrackConnector);
 		}else {
-			return prevInterval.getToTrackConnector();
+			return Optional.ofNullable(prevInterval.getToTrackConnector());
 		}
 	}
 	
-	public TimeInterval getTrainInterval(int relativeIndex) {
+	public TimeInterval<?> getTrainInterval(int relativeIndex) {
 		return train.getInterval(this,relativeIndex);
 	}
 	
-	public TimeInterval getPreviousTrainInterval() {
+	public TimeInterval<?> getPreviousTrainInterval() {
 		return this.getTrainInterval(-1);
 	}
 
-	 /**
-     * @return connector used for departure from the route segment
-     */
-	public Optional<TrackConnector> getToTrackConnector(){
-		TimeInterval nextInterval = this.getNextTrainInterval();
-		if(isNodeOwner()) {
-			Node node = getOwnerAsNode();
-			return nextInterval == null ? Optional.empty() :
-				node.getTrackConnectors().getForLineTrack((LineTrack) nextInterval.getTrack());
-		}else {
-			return nextInterval.getFromTrackConnector();
-		}
-	}
 	/**
      * @return true in case it is inner node interval and both track connectors are
      *         on the same side of station
@@ -440,7 +360,9 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 		if(!isAttached()) {
 			 throw new IllegalStateException("Time interval is not attached.");
 		}
-		owner.removeTimeInterval(this, time);
+		ownerId=null;
+		
+	
 	}
 	
 	public boolean isAttached() {
@@ -456,18 +378,9 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	public void setList(TimeIntervalList timeIntervalList) {
+	public void setList(TimeIntervalListId timeIntervalListId) {
 		// TODO Auto-generated method stub
 		
-	}
-
-	public boolean isOwner() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public Node getOwnerAsNode() {
-		return isOwner() ? (Node) owner : null;
 	}
 
 	private boolean isBlockOwner() {
@@ -483,17 +396,20 @@ public class TimeInterval extends AbstractEntity<TimeIntervalId> {
 		return null;
 	}
 	public boolean isLineOwner() {
-		// TODO Auto-generated method stub
+		if(ownerId instanceof LineId) {
+			return true;
+		}
 		return false;
 	}
 	public boolean isNodeOwner() {
-		// TODO Auto-generated method stub
+		if(ownerId instanceof NodeId) {
+			return true;
+		}
 		return false;
 	}
 	private void setIntervalImpl(OffsetTime start, OffsetTime end) {
 		this.interval = IntervalFactory.createInterval(start, end);
 		if(this.interval.getLength().isZero()) {
-			this.freightOption=null;
 		}
 		
 	}

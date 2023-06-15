@@ -39,6 +39,12 @@ public class LineAdded implements DomainEvent {
 		this.lineId = lineId;
 		this.occuredOn = occuredOn;
 		this.linepathsId = linepathsId;
+
 	}
 
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

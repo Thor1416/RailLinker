@@ -13,7 +13,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.usermgt.model.ids.RoleId;
 
 import lombok.Data;

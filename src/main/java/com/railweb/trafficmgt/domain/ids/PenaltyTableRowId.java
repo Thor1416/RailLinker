@@ -29,13 +29,14 @@ public class PenaltyTableRowId extends DomainObjectId<UUID> {
 	}
 
 	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		return this.id.equals(other.getId());
+	public UUID toUUID() {
+		return this.id;
 	}
 
 	@Override
-	public UUID toUUID() {
-		return this.id;
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

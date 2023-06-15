@@ -5,7 +5,7 @@ import javax.measure.quantity.Mass;
 import javax.persistence.Convert;
 
 import com.railweb.shared.converters.MassConverter;
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.EngineClassId;
 import com.railweb.trafficmgt.domain.ids.TrainTypeEquivalentId;
 

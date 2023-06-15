@@ -1,7 +1,7 @@
 package com.railweb.admin.domain;
 
 import com.railweb.admin.domain.id.OperatingCompagnyId;
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 
 public class OperatingCompagny extends AbstractEntity<OperatingCompagnyId> {
 

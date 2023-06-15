@@ -72,8 +72,8 @@ public class NetworkNodeIdType implements UserType {
 			NetworkNodeId id = (NetworkNodeId) value;
 			NetworkNodeIdTuple tuple =id.getId();
 			st.setString(index, tuple.getNetworkId().getId().toString());
-			st.setString(index+1, tuple.getNodeId().getPrefix().getValue());
-			st.setString(index+2, tuple.getNodeId().getAbbr().getValue());
+			st.setString(index+1, tuple.getPrefix().getValue());
+			st.setString(index+2, tuple.getAbbr().getValue());
 		}
 
 	}

@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 
 import com.railweb.admin.domain.id.RegionId;
 import com.railweb.shared.domain.base.AbstractAggregateRoot;
+import com.railweb.shared.domain.base.AbstractDomainEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.NetworkId;
 
 import lombok.Data;
@@ -40,6 +42,20 @@ public class Region extends AbstractAggregateRoot<RegionId> {
 
 	@Override
 	public RegionId id() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public Region fromJpaEntity(AbstractEntity<RegionId> jpaEntity) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public AbstractEntity<RegionId> toJpaEntity(AbstractDomainEntity<RegionId> domainEntity) {
 		// TODO Auto-generated method stub
 		return null;
 	}

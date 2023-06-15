@@ -4,7 +4,7 @@ import javax.persistence.Entity;
 
 import org.hibernate.envers.Audited;
 
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.LineClassId;
 
 @Entity

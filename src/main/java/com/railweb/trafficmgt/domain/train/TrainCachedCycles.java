@@ -7,8 +7,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.SetMultimap;
 import com.railweb.shared.domain.util.CollectionUtils;
-import com.railweb.trafficmgt.domain.TimeIntervalList;
-import com.railweb.trafficmgt.domain.TrainsCycleItem;
 import com.railweb.trafficmgt.filters.ModelPredicates;
 
 public class TrainCachedCycles {
@@ -63,7 +61,7 @@ public class TrainCachedCycles {
 		return false;
 	}
 
-	public void addCycleItem(TimeIntervalList timeIntervalList, TrainCycleMap trainCycleMap) {
+	public void addCycleItem(TimeIntervalListId timeIntervalListId, TrainCycleMap trainCycleMap) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.google.common.collect.Iterables;
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -2,36 +2,36 @@ package com.railweb.trafficmgt.domain.train;
 
 import java.time.ZonedDateTime;
 
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.domain.base.AbstractDomainEntity;
+import com.railweb.trafficmgt.domain.ids.NodeId;
+import com.railweb.trafficmgt.domain.ids.PlatformId;
 import com.railweb.trafficmgt.domain.ids.TrainStopId;
-import com.railweb.trafficmgt.domain.network.Station;
 
 import lombok.Data;
 
 @Data
-@Entity
-public class TrainStop extends AbstractEntity<TrainStopId>{
+public class TrainStop extends AbstractDomainEntity<TrainStopId>{
 
-	@EmbeddedId
-	private TrainStopId id;
-	private Station station;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8926196334108801449L;
+	private NodeId stopNode;
 	private ZonedDateTime arrival;
 	private ZonedDateTime departure;
-	private Platform platform;
+	private Boolean needsPlatform;
+	private PlatformId platform;
 	
 	public boolean isValid() {
 		return arrival.isBefore(departure);
 	}
 
 	public boolean isBefore(TrainStop trainStop) {
-		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub	
 		return false;
 	}
 	public String toString() {
-		return "Trainstop with id:" + id + "at" + station.getName();
+		return "Trainstop with id:" + id + "at" + stopNode.toString();
 	}
 
 	public void updateInterval(TimeInterval interval) {

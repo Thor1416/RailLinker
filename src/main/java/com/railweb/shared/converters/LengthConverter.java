@@ -5,7 +5,7 @@ import javax.measure.quantity.Length;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-@Converter
+@Converter(autoApply=true)
 public class LengthConverter implements AttributeConverter<Quantity<Length>,Float> {
 
 	@Override

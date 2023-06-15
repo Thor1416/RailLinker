@@ -7,7 +7,7 @@ import javax.measure.spi.ServiceProvider;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-@Converter
+@Converter(autoApply=true)
 public class MassConverter implements AttributeConverter<Quantity<Mass>,String> {
 
 	private static final QuantityFormat FORMAT =

@@ -9,7 +9,7 @@ import javax.persistence.Entity;
 
 import com.railweb.shared.converters.SpeedConverter;
 import com.railweb.shared.converters.TimeConverter;
-import com.railweb.shared.domain.base.AbstractEntity;
+import com.railweb.shared.infra.persistence.AbstractEntity;
 import com.railweb.trafficmgt.domain.ids.PenaltyTableRowId;
 import com.railweb.trafficmgt.domain.network.LineGradient;
 

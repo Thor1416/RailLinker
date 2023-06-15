@@ -31,6 +31,12 @@ public class AccPenaltyChanged implements DomainEvent  {
 	public Instant occurredOn() {
 		return occurredOn;
 	}
+
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
 	
 }

@@ -14,7 +14,6 @@ import javax.persistence.MapKey;
 import javax.persistence.OneToMany;
 
 import com.railweb.shared.domain.base.ValueObject;
-import com.railweb.trafficmgt.domain.TrainsCycleItem;
 
 public class TrainCycleList implements ValueObject<TrainCycleList> {
 
@@ -39,4 +38,6 @@ public class TrainCycleList implements ValueObject<TrainCycleList> {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+
 }

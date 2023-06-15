@@ -22,14 +22,14 @@ public class NetworkId extends DomainObjectId<UUID> {
 		this.id = UUID.randomUUID();
 	}
 
-	@Override
-	public boolean sameValueAs(DomainObjectId<UUID> other) {
-		return this.getId().equals(other.getId());
-	}
 
 	@Override
 	public UUID toUUID() {
 		return id;
+	}
+	@Override
+	public boolean sameValueAs(DomainObjectId<UUID> other) {
+		return this.getId().equals(other.getId());
 	}
 
 }

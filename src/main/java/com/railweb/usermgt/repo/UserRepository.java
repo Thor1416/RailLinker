@@ -3,7 +3,7 @@ package com.railweb.usermgt.repo;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.railweb.shared.domain.base.BaseRepository;
+import com.railweb.shared.infra.persistence.BaseRepository;
 import com.railweb.usermgt.model.User;
 import com.railweb.usermgt.model.ids.UserId;
 

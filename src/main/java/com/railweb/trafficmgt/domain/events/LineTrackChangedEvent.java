@@ -17,4 +17,10 @@ public class LineTrackChangedEvent implements DomainEvent {
 		return null;
 	}
 
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

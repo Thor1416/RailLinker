@@ -31,7 +31,7 @@ public class UserRepositoryTest {
 		User user = new User(context,new UserId(UUID.randomUUID()));
 		user.setUsername("tsimon17");
 		user.setPassword("qqe57nd");
-		user.setFirstname("Thorbjørn");
+		user.setFirstname("Thorbjorn");
 		user.setLastname("Simonsen");
 		
 		User savedUser = repo.save(user);

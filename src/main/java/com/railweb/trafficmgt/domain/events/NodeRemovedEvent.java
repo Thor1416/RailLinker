@@ -11,7 +11,7 @@ import lombok.Getter;
 public class NodeRemovedEvent implements DomainEvent {
 
 	/**
-	 * @author Thorbjørn Simonsen
+	 * @author Thorbjï¿½rn Simonsen
 	 */
 	private static final long serialVersionUID = 1L;
 	@Getter
@@ -29,6 +29,12 @@ public class NodeRemovedEvent implements DomainEvent {
 	@Override
 	public Instant occurredOn() {
 		return occuredOn; 
+	}
+
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	

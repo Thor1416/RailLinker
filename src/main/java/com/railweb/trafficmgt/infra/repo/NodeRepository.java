@@ -10,7 +10,7 @@ import com.railweb.trafficmgt.domain.ids.NetworkId;
 import com.railweb.trafficmgt.domain.ids.NodeId;
 import com.railweb.trafficmgt.domain.network.Node;
 
-public interface NodeRepository extends BaseRepository<Node, NodeId> {
+public interface NodeRepository extends BaseRepository<NodeEntity, NodeId> {
 
 	@Query("Select n.id.abbr, n.name FROM Node n where n.id.net =:net")
 	Page<AbbrAndName> findAbbrsUsed(@Param("net") NetworkId id, Pageable pageable);

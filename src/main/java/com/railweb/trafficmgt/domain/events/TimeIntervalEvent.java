@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import com.railweb.shared.domain.base.DomainObjectId;
 import com.railweb.shared.domain.events.DomainEvent;
+import com.railweb.trafficmgt.domain.ids.NetSegmentId;
 import com.railweb.trafficmgt.domain.network.NetSegment;
 import com.railweb.trafficmgt.domain.network.Track;
 import com.railweb.trafficmgt.domain.train.TimeInterval;
@@ -11,7 +12,7 @@ import com.railweb.trafficmgt.domain.train.TimeInterval;
 import lombok.Getter;
 
 
-public class TimeIntervalEvent<ID extends DomainObjectId<?>, T extends Track> implements DomainEvent {
+public class TimeIntervalEvent<ID extends NetSegmentId<?>, T extends Track<ID>> implements DomainEvent {
 
 	/**
 	 * 
@@ -20,7 +21,7 @@ public class TimeIntervalEvent<ID extends DomainObjectId<?>, T extends Track> im
 	@Getter
 	private final NetSegment<ID,T> owner;
 	@Getter
-	private final TimeInterval interval;
+	private final TimeInterval<ID> interval;
 	@Getter
 	private final TimeIntervalEvent.Type type;
 	
@@ -28,7 +29,7 @@ public class TimeIntervalEvent<ID extends DomainObjectId<?>, T extends Track> im
 	
 	public enum Type{ADDED,REMOVED, CHANGED}
 	
-	public TimeIntervalEvent(NetSegment<ID, T> owner, TimeInterval interval, 
+	public TimeIntervalEvent(NetSegment<ID, T> owner, TimeInterval<ID> interval, 
 													Type type, Instant occuredOn) {
 		this.owner = owner;
 		this.interval = interval;
@@ -38,6 +39,11 @@ public class TimeIntervalEvent<ID extends DomainObjectId<?>, T extends Track> im
 	@Override
 	public Instant occurredOn() {
 		return occuredOn;
+	}
+	@Override
+	public boolean isConsumed() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 

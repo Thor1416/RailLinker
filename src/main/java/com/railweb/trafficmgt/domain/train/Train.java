@@ -3,22 +3,22 @@ package com.railweb.trafficmgt.domain.train;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetTime;
-import java.time.Period;
 import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
 
 import javax.measure.Quantity;
 import javax.measure.quantity.Speed;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
-import javax.persistence.Convert;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
@@ -28,10 +28,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyClass;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -42,15 +44,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.lang.NonNull;
 
 import com.railweb.admin.domain.OperatingCompagny;
-import com.railweb.shared.converters.SpeedConverter;
 import com.railweb.shared.domain.base.AbstractAggregateRoot;
 import com.railweb.shared.domain.i18n.TranslatedString;
 import com.railweb.shared.domain.util.ReferenceHolder;
-import com.railweb.trafficmgt.domain.TimeIntervalList;
+import com.railweb.trafficmgt.application.validation.TrackValidator;
 import com.railweb.trafficmgt.domain.TrackSystem;
 import com.railweb.trafficmgt.domain.TrainCycleType;
 import com.railweb.trafficmgt.domain.TrainNumber;
-import com.railweb.trafficmgt.domain.TrainsCycleItem;
 import com.railweb.trafficmgt.domain.computation.TrainCalculator;
 import com.railweb.trafficmgt.domain.computation.TrainRouteSelection;
 import com.railweb.trafficmgt.domain.events.LineTrackChangedEvent;
@@ -68,9 +68,10 @@ import com.railweb.trafficmgt.domain.ids.NetworkId;
 import com.railweb.trafficmgt.domain.ids.NodeId;
 import com.railweb.trafficmgt.domain.ids.PowerSystemId;
 import com.railweb.trafficmgt.domain.ids.TimetableId;
+import com.railweb.trafficmgt.domain.ids.TrackId;
 import com.railweb.trafficmgt.domain.ids.TrainId;
+import com.railweb.trafficmgt.domain.ids.TrainTypeId;
 import com.railweb.trafficmgt.domain.network.LineTrack;
-import com.railweb.trafficmgt.domain.network.Node;
 import com.railweb.trafficmgt.domain.network.NodeTrack;
 import com.railweb.trafficmgt.exception.IllegalSpeedException;
 import com.railweb.trafficmgt.exception.IllegalStopTimeException;
@@ -78,60 +79,39 @@ import com.railweb.trafficmgt.exception.TrainStopNotValidException;
 import com.railweb.trafficmgt.exception.TrainStopOutOfRangeException;
 import com.railweb.trafficmgt.exception.TrainStopTooEarlyException;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import lombok.Data;
 import lombok.ToString;
-import tech.units.indriya.ComparableQuantity;
-import tech.units.indriya.quantity.Quantities;
-import tech.units.indriya.unit.Units;
 
 /**
- * Aggregate root representing a train, which is one of the central clases in 
- * the domain model, as it scheduled to leave a station and at least one new station. 
- * It is identified by its train number and timetable or a code.
+ * Aggregate root representing a train, which is one of the central classes in
+ * the domain model, as it scheduled to leave a station and at least one new
+ * station. It is identified by its train number and timetable or a code.
  * 
- * It always has a train class, a top speed and som stops.
+ * It always has a train class, a top speed and some stops.
  * 
- * @author Thorbjørn Simonsen
+ * @author ThorbjÃ¸rn Simonsen
  * @version 0.1
  */
 @Data
 @ToString
-@Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = "code"))
-@Configurable(preConstruction = true)
-@Audited
 public class Train extends AbstractAggregateRoot<TrainId> {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7854208827444127515L;
-	@EmbeddedId
-	private TrainId id;
 	@NonNull
-	private NetworkId net;
+	private NetworkId network;
+	@NonNull
 	private String code;
 
 	/* Weight and tractive force */
-	@ManyToMany
-	@JoinTable(name = "train_trainType", joinColumns = { @JoinColumn(name = "train_number"),
-			@JoinColumn(name = "timetableId") }, inverseJoinColumns = @JoinColumn(name = "trainTypeId"))
-	@NonNull
-	private TrainType trainType;
-
-	@Convert(converter = SpeedConverter.class)
-	private Quantity<Speed> topSpeed;
-
-	@OneToMany
-	@JoinTable(name = "trains_trainStop", joinColumns = { @JoinColumn(name = "train_number", referencedColumnName = "train_number"),
-			@JoinColumn(name = "timetableId", referencedColumnName = "timtableId") }, inverseJoinColumns = @JoinColumn(name = "trainStop_id", referencedColumnName = "id"))
-	@MapKeyColumn(name = "StopNumber")
+	private List<TrainSegment> trainSegments;
 	private Map<Integer, TrainStop> trainStops;
-
-	private TimeIntervalList timeIntervalList;
-	@OneToOne(fetch = FetchType.LAZY)
+	private TimeIntervalList<?> timeIntervalList;
 	private Train previousJoinedTrain;
-	@OneToOne(fetch = FetchType.LAZY)
 	private Train nextJoinedTrain;
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -143,14 +123,14 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "Train_RunDay", joinColumns = { @JoinColumn(name = "train_number", referencedColumnName = "train_number"),
 			@JoinColumn(name = "timetableId", referencedColumnName = "timetableId") }, inverseJoinColumns = @JoinColumn(name = "rundayId", referencedColumnName = "id"))
-	private RunDays rundays;
-	
+	private Set<RunDays> rundays;
+
 	@ElementCollection
-	@CollectionTable(name="running_period", joinColumns= {@JoinColumn(name = "train_number"),
-			@JoinColumn(name = "timetableId")})
-	private SortedSet<Period> runningPeriod;
-	
-	@OneToMany
+	@CollectionTable(name = "TrainRunPeriods")
+	@OrderBy("startDate")
+	private List<TrainRunPeriod> trainRunPeriods;
+
+	@ManyToOne
 	private OperatingCompagny operator;
 
 	/* Technological times */
@@ -159,8 +139,8 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	@OneToOne(fetch = FetchType.LAZY)
 	private TimeInterval timeAfter;
 
-	@Transient
-	private TrainNameDelegate trainNameDelegate;
+
+	
 	@Embedded
 	private PowerSystemId powersystem;
 	@ManyToOne
@@ -173,14 +153,20 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	private Set<String> notes;
 
 	private String logoPath;
-	
+
 	private Duration changeDirectionStop;
+	@ManyToOne
 	private TrainStatus proccesStatus;
 
 	/* Cached Map for train cycles */
 	@Embedded
 	private TrainCachedCycles cachedCycles;
-
+	
+	@Transient
+	private TrainNameDelegate trainNameDelegate;
+	@Transient
+	private TrackValidator trackValidator; 
+	
 	public enum NameType {
 		NORMAL, COMPLETE
 	}
@@ -188,7 +174,8 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	public Train(ApplicationContext applicationContext, TrainNumber number, TimetableId timetableId) {
 		super(applicationContext, new TrainId(number, timetableId));
 		this.trainNameDelegate = new TrainNameDelegate(this);
-		timeIntervalList = new TimeIntervalList();
+		this.trackValidator = applicationContext.getBean(TrackValidator.class);
+		timeIntervalListId = new TimeIntervalListId();
 		trainStops = new HashMap<>();
 		cachedCycles = new TrainCachedCycles();
 	}
@@ -200,6 +187,7 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 			this.id = new TrainId(number, timetableId);
 			registerEvent(new TrainNumberUpdatedEvent(this.id, oldNumber, number));
 			this.refreshCachedNames();
+
 		}
 	}
 
@@ -230,21 +218,53 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	/**
 	 * @param the speed to set
 	 * @throws IllegalSpeedException    if the speed is 0 or less
-	 * @throws IllegalArgementException if speed is null
+	 * @throws IllegalArgumentException if speed, fromNode or toNode is null, or if
+	 *                                  fromNode or toNode is not in train
 	 */
 
-	public void setTopSpeed(Quantity<Speed> topSpeed) throws IllegalSpeedException {
+	public void setTopSpeed(NodeId sourceNode, NodeId destNode, Quantity<Speed> topSpeed) throws IllegalSpeedException {
+		if (sourceNode == null || destNode == null)
+			throw new IllegalArgumentException("Nodes cannot be null for train:" + this.id.getTrainNumber());
+
 		if (topSpeed == null) {
 			throw new IllegalArgumentException("Speed cannot be null for train:" + this.id.getTrainNumber());
 		}
-		ComparableQuantity<Speed> topSpeed2 = (ComparableQuantity<Speed>) topSpeed;
-		if (!topSpeed2.isGreaterThan(Quantities.getQuantity(0, Units.KILOMETRE_PER_HOUR))) {
-			throw new IllegalSpeedException("The speed of a train cannot be 0 or less");
-		}
-		if (!Objects.equals(topSpeed, this.topSpeed)) {
-			this.topSpeed = topSpeed;
-		}
+
+		 // Check if sourceNodeId and destinationNodeId are present in the train's time intervals
+	    if (!timeIntervalListId.areNodesInTimeIntervals(sourceNode, destNode)) {
+	        throw new IllegalArgumentException("Nodes not present in the train's time intervals");
+	    }
+	    // Check if the sourceNodeId comes before the destinationNodeId in the time intervals
+	    if (!isNodeOrderCorrect(sourceNode, destNode)) {
+	        throw new IllegalArgumentException("Nodes not in correct order in the train's time intervals");
+	    }
+	    
+	    Tuple2<NodeId,NodeId> nodeTuple = Tuple.of(sourceNode, destNode);
+	    
+	    // Check for overlapping speeds
+	    for(Entry<Tuple2<NodeId, NodeId>, Quantity<Speed>> entry :topSpeeds.entrySet()) {
+	    	 Tuple2<NodeId, NodeId> existingNodeTuple = entry.getKey();
+	    	 Quantity<Speed> existingTopSpeed = entry.getValue();
+	    	 if (checkOverlap(nodeTuple, topSpeed, existingNodeTuple, existingTopSpeed)) {
+	             throw new IllegalArgumentException("Overlapping top speeds between nodes");
+	         }
+	    }
+	    
+	    topSpeeds.put(nodeTuple, topSpeed);
+
 	}
+
+	private boolean checkOverlap(Tuple2<NodeId, NodeId> nodeTuple, Quantity<Speed> topSpeed, Tuple2<NodeId, NodeId> existingNodeTuple,
+			Quantity<Speed> existingTopSpeed) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private boolean isNodeOrderCorrect(NodeId sourceNode, NodeId destNode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 
 	public void refreshCachedNames() {
 		trainNameDelegate.refreshCachedNames();
@@ -261,32 +281,6 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 		}
 	}
 
-	public boolean isConflicting() {
-		for (TimeInterval interval : timeIntervalList) {
-			if (interval.isOverlapping()) {
-				return true;
-			}
-		}
-		return ((timeBefore != null && timeBefore.isOverlapping()) || (timeAfter != null && timeAfter.isOverlapping()));
-	}
-
-	/**
-	 * @return set of trains with conflicting times
-	 */
-	public Set<Train> getConflictingTrains() {
-		ReferenceHolder<Set<Train>> conflictsRef = new ReferenceHolder<>();
-		for (TimeInterval interval : timeIntervalList) {
-			this.addOverlappingTrains(interval, conflictsRef);
-		}
-		this.addOverlappingTrains(timeBefore, conflictsRef);
-		this.addOverlappingTrains(timeAfter, conflictsRef);
-		if (conflictsRef.get() == null) {
-			return Collections.emptySet();
-		} else {
-			return conflictsRef.get();
-		}
-
-	}
 
 	public TrainStop addTrainStop(Integer number, TrainStop trainStop)
 			throws TrainStopOutOfRangeException, IllegalArgumentException, TrainStopNotValidException, TrainStopTooEarlyException {
@@ -300,7 +294,7 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 			throw new TrainStopNotValidException("Train stop not valid");
 		}
 
-		if (!this.timeIntervalList.stream().filter(t -> t.getOwner().equals(trainStop.getStation())).findFirst().isPresent()) {
+		if (!this.timeIntervalListId.stream().filter(t -> t.getOwner().equals(trainStop.getStation())).findFirst().isPresent()) {
 			throw new TrainStopNotValidException("Trainstop not on specified train");
 		}
 		if (this.trainStops.get(number - 1).isBefore(trainStop)) {
@@ -312,25 +306,25 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 		}
 	}
 
-	public Node getStartNode() {
-		return timeIntervalList.get(0).getOwnerAsNode();
+	public NodeId getStartNode() {
+		return (NodeId) timeIntervalListId.get(0).getOwnerId();
 	}
 
 	public boolean checkPlatforms() {
-		for (TimeInterval interval : timeIntervalList) {
-			if (!interval.isPlatformOK()) {
+		for (TimeInterval interval : timeIntervalListId) {
+			if (trackValidator.validateTrackPlatform(interval.getTrackId())==false) {
 				return false;
 			}
 		}
 		return true;
 	}
 
-	public Node getEndNode() {
-		return timeIntervalList.get(timeIntervalList.size() - 1).getOwnerAsNode();
+	public NodeId getEndNode() {
+		return (NodeId) timeIntervalListId.get(timeIntervalListId.size() - 1).getOwnerId();
 	}
 
 	public OffsetTime getStartTime(ZoneOffset offset) {
-		return timeIntervalList.get(0).getStart(offset);
+		return timeIntervalListId.get(0).getStart(offset);
 	}
 
 	/**
@@ -346,11 +340,11 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 				timeBefore.removeFromOwner(clock);
 			}
 			timeBefore = null;
-			registerEvent(new TimeBeforeChangedEvent(this.getId(), oldLength, length,clock));
+			registerEvent(new TimeBeforeChangedEvent(this.getId(), oldLength, length, clock));
 		} else if (!length.isZero() && timeBefore == null) {
 			TimeInterval firstInterval = this.getFirstInterval();
-			timeBefore = new TimeInterval(this, firstInterval.getOwner(), firstInterval.getStart().plus(length).plusSeconds(1),
-					firstInterval.getStart().minusSeconds(1), firstInterval.getTrack());
+			timeBefore = new TimeInterval(this, firstInterval.getOwnerId(), firstInterval.getStart().plus(length).plusSeconds(1),
+					firstInterval.getStart().minusSeconds(1), firstInterval.getTrackId());
 			if (isAttached()) {
 				timeBefore.updateInOwner();
 			}
@@ -420,17 +414,16 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	}
 
 	public void move(OffsetTime time, TrainCalculator calculator, Instant clock) {
-		if (timeIntervalList.get(0).getStart(time.getOffset()).compareTo(time) == 0) {
+		if (timeIntervalListId.get(0).getStart(time.getOffset()).compareTo(time) == 0) {
 			return;
 		}
-		timeIntervalList.get(0).move(time);
+		timeIntervalListId.get(0).move(time);
 		calculator.recalculate(this, 0);
 		registerEvent(new TrainChangedEvent(this.getId(), new SpecialTrainTimeIntervalList(Type.MOVED, 0, 0), clock));
 	}
 
-	public void changeStopTime(TimeInterval nodeInterval, Duration length, 
-									TrainCalculator calculator,  Instant clock) 
-											throws IllegalStopTimeException {
+	public void changeStopTime(TimeInterval nodeInterval, Duration length, TrainCalculator calculator, Instant clock)
+			throws IllegalStopTimeException {
 		// check time
 		if (length.isNegative()) {
 			throw new IllegalStopTimeException("Stop time cannot be negative");
@@ -442,8 +435,8 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 		if (length.compareTo(oldLength) == 0)
 			return;
 
-		int index = timeIntervalList.indexOf(nodeInterval);
-		if (index == -1 || index == 0 || index == (timeIntervalList.size() - 1) || !nodeInterval.isOwner()) {
+		int index = timeIntervalListId.indexOf(nodeInterval);
+		if (index == -1 || index == 0 || index == (timeIntervalListId.size() - 1) || !nodeInterval.isOwner()) {
 			throw new IllegalStopTimeException("Cannot change interval");
 		}
 		int changedIndex = index;
@@ -456,9 +449,9 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 			changedIndex = changedIndex - 1;
 		}
 		calculator.recalculate(this, index);
-		
+
 		SpecialTrainTimeIntervalList sttil = new SpecialTrainTimeIntervalList(Type.STOP_TIME, changedIndex, index);
-		registerEvent(new TrainChangedEvent(this.id(),sttil, clock));
+		registerEvent(new TrainChangedEvent(this.id(), sttil, clock));
 	}
 
 	/**
@@ -468,10 +461,10 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	 * @param speed        velocity to be set
 	 * @param addedTime    added time
 	 */
-	public void changeSpeedAndAddedTime(TimeInterval lineInterval, Quantity<Speed> speed,
-			Duration addedTime, TrainCalculator calculator, Instant clock) {
+	public void changeSpeedAndAddedTime(TimeInterval lineInterval, Quantity<Speed> speed, Duration addedTime, TrainCalculator calculator,
+			Instant clock) {
 
-		int index = timeIntervalList.indexOf(lineInterval);
+		int index = timeIntervalListId.indexOf(lineInterval);
 		if (index == -1 || !lineInterval.isLineOwner()) {
 			throw new IllegalArgumentException("Cannot change interval");
 		}
@@ -481,7 +474,7 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 		int changedIndex = index;
 
 		// line interval before (if there is not stop ...)
-		if ((index - 2) >= 0 && timeIntervalList.get(index - 1).getLength().isZero()) {
+		if ((index - 2) >= 0 && timeIntervalListId.get(index - 1).getLength().isZero()) {
 			changedIndex = index - 2;
 		}
 
@@ -490,8 +483,7 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 		registerEvent(new TrainChangedEvent(this.id(), sttil, clock));
 	}
 
-	public void changeNodeTrack(TimeInterval interval, NodeTrack track, 
-			TrainRouteSelection selection, TrainCalculator calculator, Instant clock) {
+	public void changeNodeTrack(TimeInterval interval, NodeTrack track, TrainRouteSelection selection, TrainCalculator calculator, Instant clock) {
 		if (!interval.isNodeOwner()) {
 			throw new IllegalArgumentException("No node interval.");
 
@@ -504,15 +496,15 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 
 		// update - from/to straight could change
 		calculator.recalculate(this, 0);
-		
-		SpecialTrainTimeIntervalList sttil = new SpecialTrainTimeIntervalList(Type.TRACK, 0, timeIntervalList.indexOf(interval));
+
+		SpecialTrainTimeIntervalList sttil = new SpecialTrainTimeIntervalList(Type.TRACK, 0, timeIntervalListId.indexOf(interval));
 		registerEvent(new TrainChangedEvent(this.id(), sttil, clock));
 		NodeId nid = track.getOwnerAsNode().getId();
 		registerEvent(new NodeChangedEvent(nid, this.id(), sttil, clock));
 	}
 
-	public void changeLineTrack(TimeInterval lineInterval, LineTrack lineTrack, 
-			TrainRouteSelection selection, TrainCalculator calculator, Instant clock) {
+	public void changeLineTrack(TimeInterval lineInterval, LineTrack lineTrack, TrainRouteSelection selection, TrainCalculator calculator,
+			Instant clock) {
 		if (!lineInterval.isLineOwner()) {
 			throw new IllegalArgumentException("No line interval");
 		}
@@ -523,8 +515,8 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 
 		// update - from/to straight could change
 		calculator.recalculate(this, 0);
-		
-		SpecialTrainTimeIntervalList sttil = new SpecialTrainTimeIntervalList(Type.TRACK, 0, timeIntervalList.indexOf(lineInterval));
+
+		SpecialTrainTimeIntervalList sttil = new SpecialTrainTimeIntervalList(Type.TRACK, 0, timeIntervalListId.indexOf(lineInterval));
 		registerEvent(new LineTrackChangedEvent(this.getId(), sttil, clock));
 
 	}
@@ -565,16 +557,21 @@ public class Train extends AbstractAggregateRoot<TrainId> {
 	protected void addCycleItem(TrainsCycleItem item, Integer number) {
 		TrainCycleType cycleType = item.getCycle().getType();
 		RunDays rundays = item.getCycle().getRundays();
-		cachedCycles.addCycleItem(timeIntervalList, cycles.get(cycleType));
+		cachedCycles.addCycleItem(timeIntervalListId, cycles.get(cycleType));
 	}
 
 	public TimeInterval getInterval(TimeInterval timeInterval, int relativeIndex) {
-		return timeIntervalList.getInterval(timeInterval, relativeIndex);
+		return timeIntervalListId.getInterval(timeInterval, relativeIndex);
 	}
 
 	@Override
 	protected AbstractAggregateRoot<TrainId>.AggregateRootBehavior<?> initialBehavior() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public boolean isTrackAllocated(TrackId trackId) {
+		return timeIntervalListId.stream()
+				.anyMatch(timeInterval->timeInterval.getTrackId().sameValueAs(trackId));
 	}
 }
