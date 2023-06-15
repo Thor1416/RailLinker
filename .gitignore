@@ -1,0 +1,9 @@
+# Compiled source #
+###################
+*.com
+*.dll
+*.exe
+*.o
+*.so
+*.log
+src/main/resources/railinker/node_modules
